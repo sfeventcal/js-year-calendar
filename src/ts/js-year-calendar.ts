@@ -221,6 +221,7 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			enableContextMenu: opt.enableContextMenu != null ? opt.enableContextMenu : false,
 			contextMenuItems: opt.contextMenuItems instanceof Array ? opt.contextMenuItems : [],
 			customDayRenderer : typeof opt.customDayRenderer === "function" ? opt.customDayRenderer : null,
+			customMonthTitleRenderer : typeof opt.customMonthTitleRenderer === "function" ? opt.customMonthTitleRenderer : null,
 			customDataSourceRenderer : typeof opt.customDataSourceRenderer === "function" ? opt.customDataSourceRenderer : null,
 			weekStart: !isNaN(parseInt(opt.weekStart)) ? parseInt(opt.weekStart) : null,
 			loadingTemplate: typeof opt.loadingTemplate === "string" || opt.loadingTemplate instanceof HTMLElement ? opt.loadingTemplate : null,
@@ -450,7 +451,9 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			titleCell.classList.add('month-title');
 			titleCell.setAttribute('colspan', this.options.displayWeekNumber ? '8' : '7');
 			titleCell.textContent = Calendar.locales[this.options.language].months[m];
-			
+			if (this.options.customMonthTitleRenderer) {
+				this.options.customMonthTitleRenderer.call(this, titleCell, this.options.startYear, m);
+			}
 			titleRow.appendChild(titleCell);
 			thead.appendChild(titleRow);
 			

@@ -33,6 +33,15 @@ export default interface CalendarOptions<T extends CalendarDataSourceElement> {
 	 * This function is called during render for each day.
      */
     customDayRenderer?: (element: HTMLElement, currentDate: Date) => void;
+
+    /**
+     * Specify a custom renderer for month titles.
+     *
+     * The HTML Element passed in parameter represent the month title cell.
+     *
+	 * This function is called during render for each month.
+     */
+    customMonthTitleRenderer?: (element: HTMLElement, year: Number, month: Number) => void;
 	
 	/**
      * Specify a custom renderer for data source. Works only with the style set to "custom".
