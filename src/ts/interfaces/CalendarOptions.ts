@@ -85,6 +85,11 @@ export default interface CalendarOptions<T extends CalendarDataSourceElement> {
     displayHeader?: boolean;
 
     /**
+     * If true, will prevent rendering of months that are outside the minDate - maxDate range.
+     */
+    hideOtherMonths?: boolean;
+
+    /**
      * Specifies whether the default context menu must be displayed when right clicking on a day.
      */
     enableContextMenu?: boolean;

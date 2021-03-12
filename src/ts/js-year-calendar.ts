@@ -223,7 +223,8 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			customDayRenderer : typeof opt.customDayRenderer === "function" ? opt.customDayRenderer : null,
 			customDataSourceRenderer : typeof opt.customDataSourceRenderer === "function" ? opt.customDataSourceRenderer : null,
 			weekStart: !isNaN(parseInt(opt.weekStart)) ? parseInt(opt.weekStart) : null,
-			loadingTemplate: typeof opt.loadingTemplate === "string" || opt.loadingTemplate instanceof HTMLElement ? opt.loadingTemplate : null
+			loadingTemplate: typeof opt.loadingTemplate === "string" || opt.loadingTemplate instanceof HTMLElement ? opt.loadingTemplate : null,
+			hideOtherMonths: opt.hideOtherMonths != null ? opt.hideOtherMonths : false
 		};
 
 		if (this.options.dataSource instanceof Array) {
@@ -408,8 +409,26 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 	protected _renderBody(): void {
 		var monthsDiv = document.createElement('div');
 		monthsDiv.classList.add('months-container');
+
+		var minMonth = null;
+		var maxMonth = null;
+		if (this.options.minDate) {
+			minMonth = new Date(this.options.minDate.getFullYear(), this.options.minDate.getMonth(), 1);
+		}
+		if (this.options.maxDate) {
+			maxMonth = new Date(this.options.maxDate.getFullYear(), this.options.maxDate.getMonth() + 1, 1);
+		}
 		
 		for (var m = 0; m < 12; m++) {
+			var firstDate = new Date(this.options.startYear, m, 1);
+			var lastDate = new Date(this.options.startYear, m + 1, 1);
+
+			if (this.options.hideOtherMonths) {
+				if ((minMonth && firstDate < minMonth) || (maxMonth && lastDate > maxMonth)) {
+					continue;
+				}
+			}
+
 			/* Container */
 			var monthDiv = document.createElement('div');
 			monthDiv.classList.add('month-container');
@@ -418,8 +437,6 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			if (this._nbCols) {
 				monthDiv.classList.add(`month-${this._nbCols}`);
 			}
-			
-			var firstDate = new Date(this.options.startYear, m, 1);
 			
 			var table = document.createElement('table');
 			table.classList.add('month');
