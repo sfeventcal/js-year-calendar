@@ -63,8 +63,6 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 	protected _mouseDown: boolean;
 	protected _rangeStart: Date;
 	protected _rangeEnd: Date;
-	protected _responsiveInterval: any;
-	protected _nbCols: number;
 
 	protected static locales = {
 		en: {
@@ -434,10 +432,6 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			var monthDiv = document.createElement('div');
 			monthDiv.classList.add('month-container');
 			monthDiv.dataset.monthId = m.toString();
-
-			if (this._nbCols) {
-				monthDiv.classList.add(`month-${this._nbCols}`);
-			}
 			
 			var table = document.createElement('table');
 			table.classList.add('month');
@@ -561,7 +555,7 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 	protected _renderLoading(): void {
 		var container = document.createElement('div');
 		container.classList.add('calendar-loading-container');
-		container.style.minHeight = (this._nbCols * 200) + 'px';
+		container.style.minHeight = '200px';
 
 		var loading = document.createElement('div');
 		loading.classList.add('calendar-loading');
@@ -914,47 +908,6 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 				}
 			});
 		}
-		
-		/* Responsive management */
-		if (this._responsiveInterval) {
-			clearInterval(this._responsiveInterval);
-			this._responsiveInterval = null;
-		}
-
-		this._responsiveInterval = setInterval(() => {
-			if (this.element.querySelector('.month') == null) {
-				return;
-			}
-
-			var calendarSize = this.element.offsetWidth;
-			var monthSize = (this.element.querySelector('.month') as HTMLElement).offsetWidth + 10;
-			this._nbCols = null;
-			
-			if (monthSize * 6 < calendarSize) {
-				this._nbCols = 2;
-			}
-			else if (monthSize * 4 < calendarSize) {
-				this._nbCols = 3;
-			}
-			else if (monthSize * 3 < calendarSize) {
-				this._nbCols = 4
-			}
-			else if (monthSize * 2 < calendarSize) {
-				this._nbCols = 6
-			}
-			else {
-				this._nbCols = 12;
-			}
-
-			this.element.querySelectorAll('.month-container').forEach(month => {
-				if (!month.classList.contains(`month-${this._nbCols}`)) {
-					['month-2', 'month-3', 'month-4', 'month-6', 'month-12'].forEach(className => {
-						month.classList.remove(className);
-					});
-					month.classList.add(`month-${this._nbCols}`);
-				}
-			});
-		}, 300);
 	}
 
 	protected _refreshRange(): void {
