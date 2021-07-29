@@ -206,6 +206,7 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			language: (opt.language != null && Calendar.locales[opt.language] != null) ? opt.language : 'en',
 			allowOverlap: opt.allowOverlap != null ? opt.allowOverlap : true,
 			displayWeekNumber: opt.displayWeekNumber != null ? opt.displayWeekNumber : false,
+			displayWeeklySummary: opt.displayWeeklySummary != null ? opt.displayWeeklySummary : false,
 			displayDisabledDataSource: opt.displayDisabledDataSource != null ? opt.displayDisabledDataSource : false,
 			displayHeader: opt.displayHeader != null ? opt.displayHeader : true,
 			alwaysHalfDay: opt.alwaysHalfDay != null ? opt.alwaysHalfDay : false,
@@ -221,6 +222,7 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			customDayRenderer : typeof opt.customDayRenderer === "function" ? opt.customDayRenderer : null,
 			customMonthTitleRenderer : typeof opt.customMonthTitleRenderer === "function" ? opt.customMonthTitleRenderer : null,
 			customDataSourceRenderer : typeof opt.customDataSourceRenderer === "function" ? opt.customDataSourceRenderer : null,
+			customDataSourceWeeklySummaryRenderer : typeof opt.customDataSourceWeeklySummaryRenderer === "function" ? opt.customDataSourceWeeklySummaryRenderer : null,
 			weekStart: !isNaN(parseInt(opt.weekStart)) ? parseInt(opt.weekStart) : null,
 			loadingTemplate: typeof opt.loadingTemplate === "string" || opt.loadingTemplate instanceof HTMLElement ? opt.loadingTemplate : null,
 			hideOtherMonths: opt.hideOtherMonths != null ? opt.hideOtherMonths : false
@@ -443,7 +445,12 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			
 			var titleCell = document.createElement('th');
 			titleCell.classList.add('month-title');
-			titleCell.setAttribute('colspan', this.options.displayWeekNumber ? '8' : '7');
+			var spanCols = 7;
+			if (this.options.displayWeekNumber)
+				spanCols++;
+			if (this.options.displayWeeklySummary)
+				spanCols++;
+			titleCell.setAttribute('colspan', spanCols.toString());
 			titleCell.textContent = Calendar.locales[this.options.language].months[m];
 			if (this.options.customMonthTitleRenderer) {
 				this.options.customMonthTitleRenderer.call(this, titleCell, this.options.startYear, m);
@@ -479,6 +486,13 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 					d = 0;
 			}
 			while (d != weekStart)
+
+			if (this.options.displayWeeklySummary) {
+				var summaryCell = document.createElement('th');
+				summaryCell.classList.add('weekly-summary');
+				summaryCell.textContent = "Weekly Summary";
+				headerRow.appendChild(summaryCell);
+			}
 			
 			thead.appendChild(headerRow);
 			table.appendChild(thead);
@@ -491,7 +505,8 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 			{
 				currentDate.setDate(currentDate.getDate() - 1);
 			}
-			
+
+			var weekStartDate = new Date(currentDate.getTime());
 			while (currentDate <= lastDate)
 			{
 				var row = document.createElement('tr');
@@ -504,7 +519,8 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 					weekNumberCell.textContent = this.getWeekNumber(currentThursday).toString();
 					row.appendChild(weekNumberCell);
 				}
-			
+
+				weekStartDate = new Date(currentDate.getTime());
 				do
 				{
 					var cell = document.createElement('td');
@@ -540,6 +556,14 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 					currentDate.setDate(currentDate.getDate() + 1);
 				}
 				while (currentDate.getDay() != weekStart)
+
+				if (this.options.displayWeeklySummary) {
+					var summaryCell = document.createElement('td');
+					summaryCell.classList.add('weekly-summary');
+					summaryCell.textContent = "";
+					summaryCell.setAttribute("data-week-start", weekStartDate.toString());
+					row.appendChild(summaryCell);
+				}
 				
 				table.appendChild(row);
 			}
@@ -623,6 +647,17 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 									this._renderDataSourceDay(day, currentDate, dayData);
 								}
 							}
+						});
+
+						month.querySelectorAll('td.weekly-summary').forEach((week: HTMLElement) => {
+							var weekStart = new Date(week.getAttribute("data-week-start"));
+							var weekEnd = new Date(weekStart);
+							weekEnd.setDate(weekEnd.getDate() + 7);
+
+							var weeklySummary = monthData.filter(e => !((e.startDate >= weekEnd) || (e.endDate < weekStart)));
+							if (!weeklySummary.length)
+								return;
+							this._renderDataSourceWeeklySummary(week, weekStart, weekEnd, weeklySummary);
 						});
 					}
 				}
@@ -721,6 +756,14 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 					this.options.customDataSourceRenderer.call(this, elt, currentDate, events);
 				}
 				break;
+		}
+	}
+
+	protected _renderDataSourceWeeklySummary(elt: HTMLElement, weekStart: Date, weekEnd: Date, events: T[]): void {
+		if (this.options.style == 'custom') {
+			if (this.options.customDataSourceWeeklySummaryRenderer) {
+				this.options.customDataSourceWeeklySummaryRenderer.call(this, elt, weekStart, weekEnd, events);
+			}
 		}
 	}
 
@@ -1382,6 +1425,13 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 		return this.options.displayWeekNumber;
 	}
 
+    /**
+     * Gets a value indicating whether the weekly summary is displayed.
+     */
+	public getDisplayWeeklySummary(): boolean {
+		return this.options.displayWeeklySummary;
+	}
+
 	/**
      * Sets a value indicating whether the weeks number are displayed.
 	 * 
@@ -1393,6 +1443,22 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 	public setDisplayWeekNumber(displayWeekNumber: boolean, preventRendering: boolean = false): void {
 		this.options.displayWeekNumber = displayWeekNumber;
 		
+		if (!preventRendering) {
+			this.render();
+		}
+	}
+
+    /**
+     * Sets a value indicating whether the weekly summary is displayed.
+     *
+     * This method causes a refresh of the calendar.
+     *
+     * @param  displayWeeklySummary Indicates whether the weekly summary is displayed.
+     * @param preventRedering Indicates whether the rendering should be prevented after the property update.
+     */
+	public setDisplayWeeklySummary(displayWeeklySummary: boolean, preventRendering: boolean = false): void {
+		this.options.displayWeeklySummary = displayWeeklySummary;
+
 		if (!preventRendering) {
 			this.render();
 		}
@@ -1659,6 +1725,13 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 	}
 
 	/**
+     * Gets the custom weekly summary data source renderer.
+     */
+	public getCustomDataSourceWeeklySummaryRenderer(): (element: HTMLElement, weekStart: Date, weekEnd: Date, events: T[]) => void {
+		return this.options.customDataSourceWeeklySummaryRenderer;
+	}
+
+	/**
      * Sets the custom data source renderer. Works only with the style set to "custom".
 	 * 
 	 * This method causes a refresh of the calendar.
@@ -1669,6 +1742,22 @@ export default class Calendar<T extends CalendarDataSourceElement> {
 	public setCustomDataSourceRenderer(customDataSourceRenderer: (element: HTMLElement, currentDate: Date, events: T[]) => void, preventRendering: boolean = false): void {
 		this.options.customDataSourceRenderer = typeof customDataSourceRenderer === "function" ? customDataSourceRenderer : null;
 		
+		if (!preventRendering) {
+			this.render();
+		}
+	}
+
+    /**
+     * Sets the custom weekly summary data source renderer. Works only with the style set to "custom".
+     *
+     * This method causes a refresh of the calendar.
+     *
+     * @param handler The function used to render the data source. This function is called during render for each week containing at least one event.
+     * @param preventRedering Indicates whether the rendering should be prevented after the property update.
+     */
+	public setCustomDataSourceWeeklySummaryRenderer(customDataSourceWeeklySummaryRenderer: (element: HTMLElement, weekStart: Date, weekEnd: Date, events: T[]) => void, preventRendering: boolean = false): void {
+		this.options.customDataSourceWeeklySummaryRenderer = typeof customDataSourceWeeklySummaryRenderer === "function" ? customDataSourceWeeklySummaryRenderer : null;
+
 		if (!preventRendering) {
 			this.render();
 		}

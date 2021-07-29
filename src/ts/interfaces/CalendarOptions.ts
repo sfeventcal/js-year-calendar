@@ -53,6 +53,15 @@ export default interface CalendarOptions<T extends CalendarDataSourceElement> {
     customDataSourceRenderer?: (element: HTMLElement, currentDate: Date, events: T[]) => void;
 
     /**
+     * Specify a custom weekly summary renderer for data source. Works only with the style set to "custom".
+     *
+     * The HTML Element passed in parameter represent the element for weekly summary info.
+     *
+     * This function is called during render for each week containing at least one event.
+     */
+    customDataSourceWeeklySummaryRenderer?: (element: HTMLElement, weekStart: Date, weekEnd: Date, events: T[]) => void;
+
+    /**
      * The elements that must be displayed on the calendar.
      * 
      * Could be:
@@ -87,6 +96,11 @@ export default interface CalendarOptions<T extends CalendarDataSourceElement> {
      * Specifies whether the weeks number are displayed.
      */
     displayWeekNumber?: boolean;
+
+    /**
+     * Specifies whether the weekly summary column is displayed.
+     */
+    displayWeeklySummary?: boolean;
 	
 	/**
      * Specifies whether the calendar header is displayed.
